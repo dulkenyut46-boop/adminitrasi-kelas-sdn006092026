@@ -36,7 +36,8 @@ export const StudentReportCardSheet: React.FC<StudentReportCardSheetProps> = ({
     getAllMidSemesterGradesForStudent,
     getStudentAttendanceStats,
     extracurriculars,
-    getStudentReport
+    getStudentReport,
+    getStudentKokurikulerInfo
   } = useApp();
 
   const isGenap = isSemesterGenap(schoolInfo.semester);
@@ -62,6 +63,9 @@ export const StudentReportCardSheet: React.FC<StudentReportCardSheetProps> = ({
   const studentExcurs = (extracurriculars || []).filter(e =>
     e.siswaId === student.id || (e.members && e.members.includes(student.id))
   );
+
+  const kokurInfo = getStudentKokurikulerInfo(student.id);
+  const kokurikulerDeskripsi = reportData.deskripsiKokurikuler?.trim() || kokurInfo.deskripsi;
 
   const density = printSettings?.density || 'normal';
   const showKop = printSettings?.showKop !== false;
@@ -393,10 +397,51 @@ export const StudentReportCardSheet: React.FC<StudentReportCardSheetProps> = ({
           </div>
         )}
 
+        {/* TABEL D: DESKRIPSI KOKURIKULER (HANYA RAPOR SEMESTER 1 & 2, TIDAK MUNCUL DI RAPOR MID) */}
+        {!isMidSemester && (
+          <div className={`${sectionSpacing} print-avoid-break`}>
+            <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-900 print:text-black flex items-center justify-between">
+              <span>D. Deskripsi Kokurikuler</span>
+              {kokurInfo.tema && (
+                <span className="text-[10px] font-normal text-slate-600 print:text-black">
+                  Tema: {kokurInfo.tema}
+                </span>
+              )}
+            </h3>
+            <table className={`w-full border-collapse border border-slate-800 print:border-black ${tableTextSize}`}>
+              <thead>
+                <tr className="bg-slate-100 print:bg-gray-100 text-left font-bold">
+                  <th className={`border border-slate-800 print:border-black ${headerPadding} w-44 sm:w-56 print:w-44 text-black`}>
+                    Projek / Kegiatan Kokurikuler
+                  </th>
+                  <th className={`border border-slate-800 print:border-black ${headerPadding} text-left text-black`}>
+                    Deskripsi Capaian Pembelajaran Kokurikuler
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="align-top print-avoid-break">
+                  <td className={`border border-slate-800 print:border-black ${cellPadding} font-bold text-black`}>
+                    <div className="text-slate-900 print:text-black">{kokurInfo.projekJudul}</div>
+                    {kokurInfo.tema && (
+                      <span className="inline-block text-[9.5px] font-normal text-slate-600 print:text-black mt-0.5">
+                        {kokurInfo.tema}
+                      </span>
+                    )}
+                  </td>
+                  <td className={`border border-slate-800 print:border-black ${cellPadding} text-justify ${tableDescSize} text-black leading-relaxed italic`}>
+                    {kokurikulerDeskripsi}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        )}
+
         {/* TABEL CATATAN WALI KELAS */}
         <div className={`${sectionSpacing} print-avoid-break`}>
           <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-900 print:text-black">
-            {isMidSemester ? 'C.' : 'D.'} Catatan Wali Kelas & Karakter Pembelajaran Mendalam {isMidSemester && '(Tengah Semester)'}
+            {isMidSemester ? 'C.' : 'E.'} Catatan Wali Kelas & Karakter Pembelajaran Mendalam {isMidSemester && '(Tengah Semester)'}
           </h3>
           <div className={`rounded-xl print:rounded-none border border-slate-700 print:border-black ${density === 'compact' ? 'p-2.5 text-[11px]' : 'p-3.5 print:p-3 text-xs'} italic leading-relaxed text-black bg-slate-50/50 print:bg-white`}>
             {isMidSemester
@@ -408,11 +453,31 @@ export const StudentReportCardSheet: React.FC<StudentReportCardSheetProps> = ({
           </div>
         </div>
 
-        {/* TABEL E: KEPUTUSAN KENAIKAN KELAS / KELULUSAN (HANYA MUNCUL DI RAPOR AKHIR SEMESTER 2 / GENAP) */}
+        {/* TABEL F: TANGGAPAN ORANG TUA / WALI MURID (HANYA RAPOR SEMESTER 1 & 2, FORMAT KOSONG) */}
+        {!isMidSemester && (
+          <div className={`${sectionSpacing} print-avoid-break`}>
+            <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-900 print:text-black">
+              F. Tanggapan Orang Tua / Wali Murid
+            </h3>
+            <div className={`rounded-xl print:rounded-none border border-slate-700 print:border-black ${density === 'compact' ? 'p-2.5 text-[11px] min-h-[55px]' : 'p-3.5 print:p-3 text-xs min-h-[70px]'} text-black bg-slate-50/30 print:bg-white flex flex-col justify-between`}>
+              {reportData.tanggapanOrangTua ? (
+                <p className="italic text-black leading-relaxed">{reportData.tanggapanOrangTua}</p>
+              ) : (
+                <div className="py-1 flex flex-col justify-between h-12 sm:h-14 print:h-12">
+                  <div className="border-b border-dotted border-slate-400 print:border-slate-500 w-full" />
+                  <div className="border-b border-dotted border-slate-400 print:border-slate-500 w-full" />
+                  <div className="border-b border-dotted border-slate-400 print:border-slate-500 w-full" />
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* TABEL G: KEPUTUSAN KENAIKAN KELAS / KELULUSAN (HANYA MUNCUL DI RAPOR AKHIR SEMESTER 2 / GENAP) */}
         {!isMidSemester && isGenap && reportData.showKenaikan !== false && (
           <div className={`${sectionSpacing} print-avoid-break`}>
             <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-900 print:text-black">
-              E. Keputusan Kenaikan Kelas / Akhir Tahun Ajaran
+              G. Keputusan Kenaikan Kelas / Akhir Tahun Ajaran
             </h3>
             <div className={`rounded-xl print:rounded-none border-2 border-slate-800 print:border-black ${density === 'compact' ? 'p-3 text-[11px]' : 'p-4 print:p-3 text-xs'} bg-slate-50/70 print:bg-white`}>
               <p className="font-semibold text-black mb-2">

@@ -300,6 +300,7 @@ interface AppContextType {
   bulkSaveDPLAssessments: (records: SiswaDPLCapaianRecord[]) => void;
   getDPLAssessmentByStudent: (projekId: string, siswaId: string) => SiswaDPLCapaianRecord | undefined;
   generateAIDPLNarrative: (siswaId: string, projekId: string) => string;
+  getStudentKokurikulerInfo: (siswaId: string, projekId?: string) => { deskripsi: string; projekJudul: string; tema?: string };
 
   jurnalKokurikulerList: JurnalAktivitasKokurikuler[];
   addJurnalKokurikuler: (jurnal: Omit<JurnalAktivitasKokurikuler, 'id'>) => void;
@@ -1385,6 +1386,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       keteranganKenaikan: `Berdasarkan pencapaian seluruh tujuan pembelajaran pada Tahun Ajaran ${schoolInfo.academicYear}, ananda ${student?.nama || 'peserta didik'} dinyatakan: NAIK KE KELAS ${nextClass.toUpperCase()}`,
       catatanWaliKelas: `"Ananda ${student?.nama || 'siswa'} menunjukkan perkembangan akhlak mulia, kedisiplinan, dan nalar kritis yang sangat membanggakan di semester ini. Tingkatkan terus semangat literasi membaca dan pertahankan kepedulian sosial yang tinggi terhadap sesama."`,
       catatanWaliKelasMid: `"Ananda ${student?.nama || 'siswa'} menunjukkan kesungguhan dan keaktifan belajar yang sangat baik hingga tengah semester ini. Pertahankan ketekunan belajarmu dan terus kembangkan potensimu pada paruh semester kedua."`,
+      deskripsiKokurikuler: '',
+      tanggapanOrangTua: '',
       tempatTanggalRapor: `${schoolInfo.city}, 20 Juni 2027`,
       tempatTanggalRaporMid: `${schoolInfo.city}, 10 Oktober 2026`,
       showRanking: true,
@@ -2068,6 +2071,34 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return narrative;
   };
 
+  const getStudentKokurikulerInfo = (siswaId: string, projekId?: string) => {
+    const student = students.find(s => s.id === siswaId);
+    const nama = student?.nama || student?.name || 'Peserta didik';
+
+    const primaryProjek = projekKokurikulerList.find(p => p.id === (projekId || 'prj-kemendikdasmen-01')) || projekKokurikulerList[0];
+    const primaryId = primaryProjek?.id;
+
+    const exactRecord = dplAssessmentList.find(r => r.siswaId === siswaId && r.projekId === primaryId && r.catatanProses?.trim())
+      || dplAssessmentList.find(r => r.siswaId === siswaId && r.catatanProses?.trim());
+
+    const activeProjek = projekKokurikulerList.find(p => p.id === exactRecord?.projekId) || primaryProjek;
+
+    if (exactRecord && exactRecord.catatanProses?.trim()) {
+      return {
+        deskripsi: exactRecord.catatanProses.trim(),
+        projekJudul: activeProjek?.judul || 'Gerakan 7KAIH (Hidup Sehat)',
+        tema: activeProjek?.tema || 'Hidup Sehat'
+      };
+    }
+
+    const tujuan = activeProjek?.tujuanRingkasDeskripsi?.trim() || 'memahami manfaat berolahraga bagi tubuh dan pembiasaan berolahraga';
+    return {
+      deskripsi: `Ananda ${nama} menunjukkan perkembangan yang sangat baik dalam ${tujuan}. Berkembang Sesuai Harapan dalam hidup bersih dan sehat serta kebugaran, kesehatan fisik, dan kesehatan mental; Berkembang Sesuai Harapan dalam bertanggung jawab dan penyampaian argumentasi.`,
+      projekJudul: activeProjek?.judul || 'Gerakan 7KAIH (Hidup Sehat)',
+      tema: activeProjek?.tema || 'Hidup Sehat'
+    };
+  };
+
   const addJurnalKokurikuler = (jurnal: Omit<JurnalAktivitasKokurikuler, 'id'>) => {
     const newJ: JurnalAktivitasKokurikuler = {
       ...jurnal,
@@ -2347,6 +2378,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         bulkSaveDPLAssessments,
         getDPLAssessmentByStudent,
         generateAIDPLNarrative,
+        getStudentKokurikulerInfo,
         jurnalKokurikulerList,
         addJurnalKokurikuler,
         updateJurnalKokurikuler,

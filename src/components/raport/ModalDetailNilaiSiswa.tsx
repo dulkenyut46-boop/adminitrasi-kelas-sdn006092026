@@ -15,7 +15,8 @@ import {
   Edit3,
   Printer,
   Sparkles,
-  FileSpreadsheet
+  FileSpreadsheet,
+  MessageSquare
 } from 'lucide-react';
 
 interface ModalDetailNilaiSiswaProps {
@@ -43,12 +44,15 @@ export const ModalDetailNilaiSiswa: React.FC<ModalDetailNilaiSiswaProps> = ({
     getAllGradesForStudent,
     getStudentReport,
     getStudentAttendanceStats,
+    getStudentKokurikulerInfo,
     grades
   } = useApp();
 
   const studentGrades = getAllGradesForStudent(student.id);
   const report = getStudentReport(student.id);
   const attStats = getStudentAttendanceStats(student.id);
+  const kokurInfo = getStudentKokurikulerInfo(student.id);
+  const kokurDesc = report.deskripsiKokurikuler?.trim() || kokurInfo.deskripsi;
 
   const totalScore = studentGrades.reduce((sum, g) => sum + g.nilaiAkhir, 0);
   const avgScore = studentGrades.length > 0 ? +(totalScore / studentGrades.length).toFixed(1) : 0;
@@ -287,6 +291,42 @@ export const ModalDetailNilaiSiswa: React.FC<ModalDetailNilaiSiswaProps> = ({
               <p className="text-[11px] text-slate-600 dark:text-slate-400 line-clamp-2">
                 {report.keteranganKenaikan || '-'}
               </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Deskripsi Kokurikuler & Tanggapan Orang Tua (Semester 1 & 2) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div className="rounded-2xl border border-purple-200/70 dark:border-purple-850 bg-purple-50/40 dark:bg-purple-950/20 p-3.5 space-y-1.5">
+            <span className="text-[11px] font-bold text-purple-900 dark:text-purple-300 flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5 text-purple-600" />
+                <span>Deskripsi Kokurikuler (Kolom D):</span>
+              </span>
+              <span className="text-[9.5px] bg-purple-100 dark:bg-purple-900/60 px-2 py-0.5 rounded text-purple-800 dark:text-purple-200 font-semibold truncate max-w-[140px]">
+                {kokurInfo.projekJudul}
+              </span>
+            </span>
+            <p className="text-xs text-slate-700 dark:text-slate-300 italic leading-relaxed bg-white dark:bg-slate-800/80 p-2.5 rounded-xl border border-purple-200/60 dark:border-purple-800/40">
+              {kokurDesc}
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 p-3.5 space-y-1.5">
+            <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+              <MessageSquare className="h-3.5 w-3.5 text-emerald-600" />
+              <span>Tanggapan Orang Tua / Wali Murid:</span>
+            </span>
+            <div className="bg-white dark:bg-slate-800/80 p-2.5 rounded-xl border border-slate-200/60 dark:border-slate-700 min-h-[58px] flex items-center">
+              {report.tanggapanOrangTua ? (
+                <p className="text-xs text-slate-700 dark:text-slate-300 italic leading-relaxed">
+                  {report.tanggapanOrangTua}
+                </p>
+              ) : (
+                <p className="text-xs text-slate-400 italic">
+                  Format bergaris kosong pada lembar cetak rapor (untuk tulisan tangan orang tua/wali).
+                </p>
+              )}
             </div>
           </div>
         </div>

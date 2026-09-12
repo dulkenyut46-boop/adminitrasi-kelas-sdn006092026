@@ -16,7 +16,9 @@ import {
   Info,
   BookOpen,
   ArrowLeft,
-  ArrowRight
+  ArrowRight,
+  RefreshCw,
+  MessageSquare
 } from 'lucide-react';
 
 interface ModalEditRaporSiswaProps {
@@ -39,10 +41,12 @@ export const ModalEditRaporSiswa: React.FC<ModalEditRaporSiswaProps> = ({
     getAllMidSemesterGradesForStudent,
     calculateStudentRankings,
     calculateMidSemesterRankings,
+    getStudentKokurikulerInfo,
     students
   } = useApp();
 
   const reportData = getStudentReport(student.id);
+  const kokurInfo = getStudentKokurikulerInfo(student.id);
 
   const [activeTab, setActiveTab] = useState<'semester' | 'mid_semester'>('semester');
 
@@ -52,6 +56,12 @@ export const ModalEditRaporSiswa: React.FC<ModalEditRaporSiswaProps> = ({
   const [targetKelas, setTargetKelas] = useState<string>(reportData.targetKelas || 'V (Lima)');
   const [keteranganKenaikan, setKeteranganKenaikan] = useState<string>(reportData.keteranganKenaikan || '');
   const [catatanWaliKelas, setCatatanWaliKelas] = useState<string>(reportData.catatanWaliKelas || '');
+  const [deskripsiKokurikuler, setDeskripsiKokurikuler] = useState<string>(
+    reportData.deskripsiKokurikuler || kokurInfo.deskripsi
+  );
+  const [tanggapanOrangTua, setTanggapanOrangTua] = useState<string>(
+    reportData.tanggapanOrangTua || ''
+  );
   const [tempatTanggalRapor, setTempatTanggalRapor] = useState<string>(reportData.tempatTanggalRapor || `${schoolInfo.city}, 20 Juni 2027`);
   const [showRanking, setShowRanking] = useState<boolean>(reportData.showRanking !== false);
   const [showKenaikan, setShowKenaikan] = useState<boolean>(reportData.showKenaikan !== false);
@@ -79,6 +89,9 @@ export const ModalEditRaporSiswa: React.FC<ModalEditRaporSiswaProps> = ({
       setTargetKelas(current.targetKelas || 'V (Lima)');
       setKeteranganKenaikan(current.keteranganKenaikan || '');
       setCatatanWaliKelas(current.catatanWaliKelas || '');
+      const kInfo = getStudentKokurikulerInfo(student.id);
+      setDeskripsiKokurikuler(current.deskripsiKokurikuler || kInfo.deskripsi);
+      setTanggapanOrangTua(current.tanggapanOrangTua || '');
       setCatatanWaliKelasMid(
         current.catatanWaliKelasMid ||
         `"Ananda ${student.nama} menunjukkan kesungguhan dan keaktifan belajar yang sangat baik hingga tengah semester ini. Pertahankan ketekunan belajarmu dan terus kembangkan potensimu pada paruh semester kedua."`
@@ -206,6 +219,8 @@ export const ModalEditRaporSiswa: React.FC<ModalEditRaporSiswaProps> = ({
       keteranganKenaikan,
       catatanWaliKelas,
       catatanWaliKelasMid,
+      deskripsiKokurikuler,
+      tanggapanOrangTua,
       tempatTanggalRapor,
       tempatTanggalRaporMid,
       showRanking,
@@ -509,12 +524,80 @@ export const ModalEditRaporSiswa: React.FC<ModalEditRaporSiswaProps> = ({
                 />
               </div>
 
-              {/* SECTION 4: TANGGAL PENGESAHAN AKHIR SEMESTER */}
+              {/* SECTION 4: DESKRIPSI KOKURIKULER (KOLOM D RAPOR SEMESTER 1 & 2) */}
+              <div className="rounded-xl border border-purple-200 dark:border-purple-800/60 p-4 bg-purple-50/40 dark:bg-purple-950/20 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-purple-600" />
+                    <label className="font-bold text-slate-900 dark:text-white text-xs">
+                      4. Deskripsi Kokurikuler (Kolom D Rapor Semester)
+                    </label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-purple-700 dark:text-purple-300 font-bold bg-purple-100 dark:bg-purple-900/60 px-2 py-0.5 rounded">
+                      {kokurInfo.projekJudul}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const fresh = getStudentKokurikulerInfo(student.id);
+                        setDeskripsiKokurikuler(fresh.deskripsi);
+                      }}
+                      className="flex items-center gap-1 text-[10.5px] font-bold text-purple-700 dark:text-purple-300 hover:text-purple-900 dark:hover:text-purple-200 bg-white dark:bg-slate-800 border border-purple-200 dark:border-purple-700 px-2 py-0.5 rounded-lg transition-colors shadow-2xs cursor-pointer"
+                      title="Sinkronkan dengan deskripsi dari menu penilaian kokurikuler"
+                    >
+                      <RefreshCw className="h-3 w-3" />
+                      <span>Sinkronkan Penilaian</span>
+                    </button>
+                  </div>
+                </div>
+
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Secara default, kolom ini otomatis mengambil narasi capaian dari menu <strong>Penilaian Kokurikuler & DPL</strong> (E-Rapor Kemendikdasmen). Anda dapat menyesuaikan redaksinya di sini.
+                </p>
+
+                <textarea
+                  value={deskripsiKokurikuler}
+                  onChange={e => setDeskripsiKokurikuler(e.target.value)}
+                  rows={3}
+                  placeholder="Deskripsi capaian kokurikuler siswa..."
+                  className="w-full rounded-xl border border-purple-300 bg-white p-2.5 text-xs text-slate-900 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white outline-none italic leading-relaxed"
+                />
+              </div>
+
+              {/* SECTION 5: TANGGAPAN ORANG TUA / WALI MURID (KOLOM F RAPOR SEMESTER 1 & 2) */}
+              <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-800/40 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4 text-emerald-600" />
+                    <label className="font-bold text-slate-900 dark:text-white text-xs">
+                      5. Tanggapan Orang Tua / Wali Murid (Kolom F Rapor Semester)
+                    </label>
+                  </div>
+                  <span className="text-[10px] text-emerald-700 dark:text-emerald-300 font-bold bg-emerald-100 dark:bg-emerald-900/60 px-2 py-0.5 rounded">
+                    Format Kosong di Lembar Rapor
+                  </span>
+                </div>
+
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                  Pada lembar cetak rapor, kolom ini tampil sebagai <strong>format kosong bergaris</strong> untuk ditulis tangan secara langsung oleh Orang Tua / Wali Murid saat pembagian rapor. Jika ada tanggapan digital yang ingin disimpan, Anda dapat mengetiknya di bawah ini.
+                </p>
+
+                <textarea
+                  value={tanggapanOrangTua}
+                  onChange={e => setTanggapanOrangTua(e.target.value)}
+                  rows={2}
+                  placeholder="Kosongkan jika ingin dibiarkan bergaris kosong untuk ditulis tangan..."
+                  className="w-full rounded-xl border border-slate-300 bg-white p-2.5 text-xs text-slate-900 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white outline-none italic leading-relaxed"
+                />
+              </div>
+
+              {/* SECTION 6: TANGGAL PENGESAHAN AKHIR SEMESTER */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1 flex items-center gap-1.5">
                     <Calendar className="h-3.5 w-3.5 text-slate-400" />
-                    <span>Tempat & Tanggal Pengesahan Rapor Akhir Semester:</span>
+                    <span>6. Tempat & Tanggal Pengesahan Rapor Akhir Semester:</span>
                   </label>
                   <input
                     type="text"

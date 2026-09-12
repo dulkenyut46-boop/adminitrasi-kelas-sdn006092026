@@ -296,6 +296,8 @@ export interface StudentReportData {
   keteranganKenaikan?: string;
   catatanWaliKelas: string;
   catatanWaliKelasMid?: string;
+  deskripsiKokurikuler?: string;
+  tanggapanOrangTua?: string;
   tempatTanggalRapor?: string;
   tempatTanggalRaporMid?: string;
   showRanking?: boolean;
