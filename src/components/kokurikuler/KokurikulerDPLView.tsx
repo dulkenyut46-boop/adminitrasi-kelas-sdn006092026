@@ -489,8 +489,8 @@ export const KokurikulerDPLView: React.FC = () => {
       semester: schoolInfo.semester?.includes('2') ? '2 (Genap)' : '1 (Ganjil)',
       tahunAjaran: schoolInfo.academicYear || '2024/2025',
       totalAlokasiJP: 36,
-      koordinator: schoolInfo.teacherName || 'Wali Kelas',
-      fasilitator: [schoolInfo.teacherName || 'Wali Kelas'],
+      koordinator: schoolInfo.homeroomTeacherName || 'Wali Kelas',
+      fasilitator: [schoolInfo.homeroomTeacherName || 'Wali Kelas'],
       dimensiTargetIds: [],
       elemenTargetIds: [],
       tahapan: [],
@@ -1429,6 +1429,16 @@ export const KokurikulerDPLView: React.FC = () => {
                   <span className="mr-2">:</span>
                   <span>{schoolInfo.phase} / {schoolInfo.academicYear}</span>
                 </div>
+                <div className="flex">
+                  <span className="w-36 font-bold">Wali Kelas</span>
+                  <span className="mr-2">:</span>
+                  <span className="font-bold">{schoolInfo.homeroomTeacherName || 'Sri Wahyuni, S.Pd.'}</span>
+                </div>
+                <div className="flex">
+                  <span className="w-36 font-bold">NIP Wali Kelas</span>
+                  <span className="mr-2">:</span>
+                  <span>{schoolInfo.homeroomTeacherNip || '-'}</span>
+                </div>
                 <div className="flex col-span-2">
                   <span className="w-36 font-bold shrink-0">Tujuan Ringkas</span>
                   <span className="mr-2">:</span>
@@ -1500,10 +1510,10 @@ export const KokurikulerDPLView: React.FC = () => {
 
               <div className="text-center">
                 <p>{schoolInfo.city}, {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
-                <p className="font-bold">Guru Kelas / Fasilitator Kokurikuler</p>
+                <p className="font-bold">Guru Kelas / Wali Kelas</p>
                 <div className="h-20"></div>
-                <p className="font-bold underline uppercase">{schoolInfo.teacherName}</p>
-                <p>NIP. {schoolInfo.teacherNip}</p>
+                <p className="font-bold underline uppercase">{schoolInfo.homeroomTeacherName || 'Sri Wahyuni, S.Pd.'}</p>
+                <p>NIP. {schoolInfo.homeroomTeacherNip || '-'}</p>
               </div>
             </div>
           </div>
