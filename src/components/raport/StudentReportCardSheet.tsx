@@ -14,6 +14,7 @@ export interface PrintSettings {
   reportType?: ReportType;
   equalizeLogos?: boolean;
   logoSize?: number;
+  parentSignatureChoice?: 'ayah' | 'ibu' | 'dots';
 }
 
 interface StudentReportCardSheetProps {
@@ -82,6 +83,42 @@ export const StudentReportCardSheet: React.FC<StudentReportCardSheetProps> = ({
   const defaultMidTanggal = schoolInfo.semester?.includes('2')
     ? `${schoolInfo.city}, 28 Maret 2027`
     : `${schoolInfo.city}, 10 Oktober 2026`;
+
+  // Pilihan nama orang tua pada tanda tangan rapor KMPM
+  const effectiveParentChoice = (() => {
+    if (reportData.parentSignatureChoice && reportData.parentSignatureChoice !== 'auto') {
+      return reportData.parentSignatureChoice;
+    }
+    return printSettings?.parentSignatureChoice || 'ayah';
+  })();
+
+  const { parentSignatureName, parentRoleSubtitle } = (() => {
+    if (effectiveParentChoice === 'dots') {
+      return {
+        parentSignatureName: '......................................................',
+        parentRoleSubtitle: 'Orang Tua / Wali'
+      };
+    }
+    if (effectiveParentChoice === 'custom' && reportData.parentCustomName?.trim()) {
+      return {
+        parentSignatureName: reportData.parentCustomName.trim(),
+        parentRoleSubtitle: 'Wali Peserta Didik'
+      };
+    }
+    if (effectiveParentChoice === 'ibu') {
+      const name = student.namaIbu?.trim() || student.namaAyah?.trim();
+      return {
+        parentSignatureName: name || '......................................................',
+        parentRoleSubtitle: student.namaIbu?.trim() ? 'Orang Tua (Ibu)' : 'Orang Tua / Wali'
+      };
+    }
+    // Default 'ayah'
+    const name = student.namaAyah?.trim() || student.namaIbu?.trim();
+    return {
+      parentSignatureName: name || '......................................................',
+      parentRoleSubtitle: student.namaAyah?.trim() ? 'Orang Tua (Ayah)' : 'Orang Tua / Wali'
+    };
+  })();
 
   return (
     <div
@@ -529,7 +566,8 @@ export const StudentReportCardSheet: React.FC<StudentReportCardSheetProps> = ({
                 <p className="text-slate-700 print:text-black">Mengetahui,</p>
                 <p className="font-bold text-black">Orang Tua / Wali Peserta Didik,</p>
                 <div className="h-16 sm:h-20 print:h-16" />
-                <p className="font-bold underline text-black">......................................................</p>
+                <p className="font-bold underline text-black">{parentSignatureName}</p>
+                <p className="text-[10px] text-slate-700 print:text-black">{parentRoleSubtitle}</p>
               </div>
 
               <div>

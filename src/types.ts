@@ -302,6 +302,8 @@ export interface StudentReportData {
   tempatTanggalRaporMid?: string;
   showRanking?: boolean;
   showKenaikan?: boolean;
+  parentSignatureChoice?: 'auto' | 'ayah' | 'ibu' | 'custom' | 'dots';
+  parentCustomName?: string;
 }
 
 export interface Extracurricular {

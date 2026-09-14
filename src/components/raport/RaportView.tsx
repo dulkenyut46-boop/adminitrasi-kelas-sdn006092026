@@ -66,7 +66,8 @@ export const RaportView: React.FC = () => {
     showSignature: true,
     showRanking: true,
     reportType: 'semester',
-    equalizeLogos: true
+    equalizeLogos: true,
+    parentSignatureChoice: 'ayah'
   });
 
   const isGenap = isSemesterGenap(schoolInfo.semester);
@@ -144,6 +145,22 @@ export const RaportView: React.FC = () => {
   const studentMidGrades = getAllMidSemesterGradesForStudent(selectedStudent.id);
   const totalScoreMid = studentMidGrades.reduce((sum, g) => sum + g.nilaiAkhirMid, 0);
   const avgScoreMid = studentMidGrades.length > 0 ? +(totalScoreMid / studentMidGrades.length).toFixed(1) : 0;
+
+  // Penentuan nama orang tua aktif untuk siswa yang sedang dipilih
+  const currentParentChoice = (reportData.parentSignatureChoice && reportData.parentSignatureChoice !== 'auto')
+    ? reportData.parentSignatureChoice
+    : (printSettings.parentSignatureChoice || 'ayah');
+
+  const currentParentName = (() => {
+    if (currentParentChoice === 'dots') return '............................ (Manual)';
+    if (currentParentChoice === 'custom' && reportData.parentCustomName?.trim()) {
+      return reportData.parentCustomName.trim();
+    }
+    if (currentParentChoice === 'ibu') {
+      return selectedStudent.namaIbu || selectedStudent.namaAyah || '(Belum Ada Data)';
+    }
+    return selectedStudent.namaAyah || selectedStudent.namaIbu || '(Belum Ada Data)';
+  })();
 
   const handleQuickRankCalc = () => {
     if (isMidSemester) {
@@ -388,8 +405,49 @@ export const RaportView: React.FC = () => {
                 </span>
               </div>
 
-              {/* Action Buttons: Batch Print & Quick Edit */}
-              <div className="flex items-center gap-2">
+              {/* Action Buttons & Quick Parent Signature Toggle */}
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* Pilihan Cepat TTD Orang Tua untuk Siswa Terpilih */}
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100/90 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs">
+                  <UserCheck className="h-3.5 w-3.5 text-blue-600 shrink-0" />
+                  <span className="text-slate-500 dark:text-slate-400 text-[11px] font-medium whitespace-nowrap">TTD Ortu:</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-200 max-w-[130px] truncate" title={currentParentName}>
+                    {currentParentName}
+                  </span>
+                  <div className="inline-flex rounded-lg p-0.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 ml-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        updateStudentReport(selectedStudent.id, { parentSignatureChoice: 'ayah' });
+                        setPrintSettings(prev => ({ ...prev, parentSignatureChoice: 'ayah' }));
+                      }}
+                      className={`px-2 py-0.5 rounded text-[10.5px] font-bold transition-all cursor-pointer ${
+                        currentParentChoice === 'ayah'
+                          ? 'bg-blue-600 text-white shadow-2xs'
+                          : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                      title={`Pilih Nama Ayah: ${selectedStudent.namaAyah || '-'}`}
+                    >
+                      Ayah
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        updateStudentReport(selectedStudent.id, { parentSignatureChoice: 'ibu' });
+                        setPrintSettings(prev => ({ ...prev, parentSignatureChoice: 'ibu' }));
+                      }}
+                      className={`px-2 py-0.5 rounded text-[10.5px] font-bold transition-all cursor-pointer ${
+                        currentParentChoice === 'ibu'
+                          ? 'bg-blue-600 text-white shadow-2xs'
+                          : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                      title={`Pilih Nama Ibu: ${selectedStudent.namaIbu || '-'}`}
+                    >
+                      Ibu
+                    </button>
+                  </div>
+                </div>
+
                 <button
                   type="button"
                   onClick={() => setIsBatchModalOpen(true)}
@@ -767,6 +825,54 @@ export const RaportView: React.FC = () => {
                     Tanda Tangan
                   </span>
                 </label>
+
+                {/* Pilihan Nama Orang Tua pada Tanda Tangan */}
+                {printSettings.showSignature && (
+                  <div className="flex items-center gap-1.5 pl-1.5 border-l border-slate-300 dark:border-slate-700">
+                    <span className="text-slate-500 dark:text-slate-400 text-[11px] font-semibold whitespace-nowrap flex items-center gap-1">
+                      <UserCheck className="h-3 w-3 text-blue-600" />
+                      <span>Nama TTD Ortu:</span>
+                    </span>
+                    <div className="inline-flex rounded-lg p-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs">
+                      <button
+                        type="button"
+                        onClick={() => setPrintSettings({ ...printSettings, parentSignatureChoice: 'ayah' })}
+                        className={`px-2.5 py-0.5 rounded text-xs font-bold transition-all cursor-pointer ${
+                          (printSettings.parentSignatureChoice || 'ayah') === 'ayah'
+                            ? 'bg-blue-600 text-white shadow-2xs'
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                        }`}
+                        title="Tampilkan nama Ayah di tanda tangan seluruh lembar cetak rapor"
+                      >
+                        Ayah
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPrintSettings({ ...printSettings, parentSignatureChoice: 'ibu' })}
+                        className={`px-2.5 py-0.5 rounded text-xs font-bold transition-all cursor-pointer ${
+                          printSettings.parentSignatureChoice === 'ibu'
+                            ? 'bg-blue-600 text-white shadow-2xs'
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                        }`}
+                        title="Tampilkan nama Ibu di tanda tangan seluruh lembar cetak rapor"
+                      >
+                        Ibu
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPrintSettings({ ...printSettings, parentSignatureChoice: 'dots' })}
+                        className={`px-2.5 py-0.5 rounded text-xs font-bold transition-all cursor-pointer ${
+                          printSettings.parentSignatureChoice === 'dots'
+                            ? 'bg-blue-600 text-white shadow-2xs'
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                        }`}
+                        title="Format titik-titik kosong untuk tanda tangan manual"
+                      >
+                        Titik-titik
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Quick Navigation in Print Toolbar */}

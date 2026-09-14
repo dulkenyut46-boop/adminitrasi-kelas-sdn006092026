@@ -18,7 +18,8 @@ import {
   ArrowLeft,
   ArrowRight,
   RefreshCw,
-  MessageSquare
+  MessageSquare,
+  UserCheck
 } from 'lucide-react';
 
 interface ModalEditRaporSiswaProps {
@@ -65,6 +66,10 @@ export const ModalEditRaporSiswa: React.FC<ModalEditRaporSiswaProps> = ({
   const [tempatTanggalRapor, setTempatTanggalRapor] = useState<string>(reportData.tempatTanggalRapor || `${schoolInfo.city}, 20 Juni 2027`);
   const [showRanking, setShowRanking] = useState<boolean>(reportData.showRanking !== false);
   const [showKenaikan, setShowKenaikan] = useState<boolean>(reportData.showKenaikan !== false);
+  const [parentSignatureChoice, setParentSignatureChoice] = useState<'auto' | 'ayah' | 'ibu' | 'custom' | 'dots'>(
+    reportData.parentSignatureChoice || 'auto'
+  );
+  const [parentCustomName, setParentCustomName] = useState<string>(reportData.parentCustomName || '');
 
   // Mid semester fields
   const [rankingMid, setRankingMid] = useState<string | number>(reportData.rankingMid ?? reportData.ranking ?? 1);
@@ -100,6 +105,8 @@ export const ModalEditRaporSiswa: React.FC<ModalEditRaporSiswaProps> = ({
       setTempatTanggalRaporMid(current.tempatTanggalRaporMid || defaultMidTanggal);
       setShowRanking(current.showRanking !== false);
       setShowKenaikan(current.showKenaikan !== false);
+      setParentSignatureChoice(current.parentSignatureChoice || 'auto');
+      setParentCustomName(current.parentCustomName || '');
     }
   }, [student, isOpen]);
 
@@ -224,7 +231,9 @@ export const ModalEditRaporSiswa: React.FC<ModalEditRaporSiswaProps> = ({
       tempatTanggalRapor,
       tempatTanggalRaporMid,
       showRanking,
-      showKenaikan
+      showKenaikan,
+      parentSignatureChoice,
+      parentCustomName
     });
     onClose();
   };
@@ -592,6 +601,98 @@ export const ModalEditRaporSiswa: React.FC<ModalEditRaporSiswaProps> = ({
                 />
               </div>
 
+              {/* SECTION: TANDA TANGAN ORANG TUA / WALI PADA RAPOR */}
+              <div className="rounded-xl border border-blue-200 dark:border-blue-800/70 p-4 bg-blue-50/40 dark:bg-blue-950/20 space-y-3">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <UserCheck className="h-4 w-4 text-blue-600" />
+                    <label className="font-bold text-slate-900 dark:text-white text-xs">
+                      Nama Orang Tua / Wali pada Tanda Tangan Rapor
+                    </label>
+                  </div>
+                  <span className="text-[10px] text-blue-700 dark:text-blue-300 font-bold bg-blue-100 dark:bg-blue-900/60 px-2 py-0.5 rounded">
+                    Pengesahan Rapor
+                  </span>
+                </div>
+
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Tentukan nama yang tercetak pada kolom tanda tangan Orang Tua / Wali untuk peserta didik <strong>{student.nama}</strong>:
+                </p>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setParentSignatureChoice('auto')}
+                    className={`p-2 rounded-xl text-xs font-bold border transition-all cursor-pointer flex flex-col items-center text-center ${
+                      parentSignatureChoice === 'auto'
+                        ? 'border-blue-600 bg-blue-600 text-white shadow-xs'
+                        : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50'
+                    }`}
+                  >
+                    <span>Otomatis</span>
+                    <span className="text-[10px] font-normal opacity-85 mt-0.5">Ikuti Toolbar Cetak</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setParentSignatureChoice('ayah')}
+                    className={`p-2 rounded-xl text-xs font-bold border transition-all cursor-pointer flex flex-col items-center text-center ${
+                      parentSignatureChoice === 'ayah'
+                        ? 'border-blue-600 bg-blue-600 text-white shadow-xs'
+                        : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50'
+                    }`}
+                  >
+                    <span>Nama Ayah</span>
+                    <span className="text-[10px] font-normal opacity-85 mt-0.5 truncate max-w-full">
+                      {student.namaAyah || '(Belum Ada)'}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setParentSignatureChoice('ibu')}
+                    className={`p-2 rounded-xl text-xs font-bold border transition-all cursor-pointer flex flex-col items-center text-center ${
+                      parentSignatureChoice === 'ibu'
+                        ? 'border-blue-600 bg-blue-600 text-white shadow-xs'
+                        : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50'
+                    }`}
+                  >
+                    <span>Nama Ibu</span>
+                    <span className="text-[10px] font-normal opacity-85 mt-0.5 truncate max-w-full">
+                      {student.namaIbu || '(Belum Ada)'}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setParentSignatureChoice('custom')}
+                    className={`p-2 rounded-xl text-xs font-bold border transition-all cursor-pointer flex flex-col items-center text-center ${
+                      parentSignatureChoice === 'custom'
+                        ? 'border-blue-600 bg-blue-600 text-white shadow-xs'
+                        : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50'
+                    }`}
+                  >
+                    <span>Wali / Kustom</span>
+                    <span className="text-[10px] font-normal opacity-85 mt-0.5">Ketik Sendiri</span>
+                  </button>
+                </div>
+
+                {parentSignatureChoice === 'custom' && (
+                  <div className="pt-1">
+                    <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      Nama Lengkap Wali / Pengganti Orang Tua:
+                    </label>
+                    <input
+                      type="text"
+                      value={parentCustomName}
+                      onChange={e => setParentCustomName(e.target.value)}
+                      placeholder="Masukkan nama lengkap wali peserta didik..."
+                      className="w-full rounded-xl border border-blue-300 bg-white px-3 py-2 text-xs text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white outline-none font-bold"
+                    />
+                  </div>
+                )}
+              </div>
+
               {/* SECTION 6: TANGGAL PENGESAHAN AKHIR SEMESTER */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
@@ -700,6 +801,98 @@ export const ModalEditRaporSiswa: React.FC<ModalEditRaporSiswaProps> = ({
                   placeholder="Tuliskan catatan evaluasi belajar tengah semester peserta didik..."
                   className="w-full rounded-xl border border-slate-300 bg-white p-2.5 text-xs text-slate-900 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white outline-none italic leading-relaxed"
                 />
+              </div>
+
+              {/* SECTION: TANDA TANGAN ORANG TUA / WALI PADA RAPOR MID */}
+              <div className="rounded-xl border border-amber-200 dark:border-amber-800/70 p-4 bg-amber-50/40 dark:bg-amber-950/20 space-y-3">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <UserCheck className="h-4 w-4 text-amber-600" />
+                    <label className="font-bold text-slate-900 dark:text-white text-xs">
+                      Nama Orang Tua / Wali pada Tanda Tangan Rapor
+                    </label>
+                  </div>
+                  <span className="text-[10px] text-amber-700 dark:text-amber-300 font-bold bg-amber-100 dark:bg-amber-900/60 px-2 py-0.5 rounded">
+                    Pengesahan Rapor Mid
+                  </span>
+                </div>
+
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Tentukan nama yang tercetak pada kolom tanda tangan Orang Tua / Wali untuk peserta didik <strong>{student.nama}</strong>:
+                </p>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setParentSignatureChoice('auto')}
+                    className={`p-2 rounded-xl text-xs font-bold border transition-all cursor-pointer flex flex-col items-center text-center ${
+                      parentSignatureChoice === 'auto'
+                        ? 'border-amber-600 bg-amber-600 text-white shadow-xs'
+                        : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50'
+                    }`}
+                  >
+                    <span>Otomatis</span>
+                    <span className="text-[10px] font-normal opacity-85 mt-0.5">Ikuti Toolbar Cetak</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setParentSignatureChoice('ayah')}
+                    className={`p-2 rounded-xl text-xs font-bold border transition-all cursor-pointer flex flex-col items-center text-center ${
+                      parentSignatureChoice === 'ayah'
+                        ? 'border-amber-600 bg-amber-600 text-white shadow-xs'
+                        : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50'
+                    }`}
+                  >
+                    <span>Nama Ayah</span>
+                    <span className="text-[10px] font-normal opacity-85 mt-0.5 truncate max-w-full">
+                      {student.namaAyah || '(Belum Ada)'}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setParentSignatureChoice('ibu')}
+                    className={`p-2 rounded-xl text-xs font-bold border transition-all cursor-pointer flex flex-col items-center text-center ${
+                      parentSignatureChoice === 'ibu'
+                        ? 'border-amber-600 bg-amber-600 text-white shadow-xs'
+                        : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50'
+                    }`}
+                  >
+                    <span>Nama Ibu</span>
+                    <span className="text-[10px] font-normal opacity-85 mt-0.5 truncate max-w-full">
+                      {student.namaIbu || '(Belum Ada)'}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setParentSignatureChoice('custom')}
+                    className={`p-2 rounded-xl text-xs font-bold border transition-all cursor-pointer flex flex-col items-center text-center ${
+                      parentSignatureChoice === 'custom'
+                        ? 'border-amber-600 bg-amber-600 text-white shadow-xs'
+                        : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50'
+                    }`}
+                  >
+                    <span>Wali / Kustom</span>
+                    <span className="text-[10px] font-normal opacity-85 mt-0.5">Ketik Sendiri</span>
+                  </button>
+                </div>
+
+                {parentSignatureChoice === 'custom' && (
+                  <div className="pt-1">
+                    <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      Nama Lengkap Wali / Pengganti Orang Tua:
+                    </label>
+                    <input
+                      type="text"
+                      value={parentCustomName}
+                      onChange={e => setParentCustomName(e.target.value)}
+                      placeholder="Masukkan nama lengkap wali peserta didik..."
+                      className="w-full rounded-xl border border-amber-300 bg-white px-3 py-2 text-xs text-slate-900 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white outline-none font-bold"
+                    />
+                  </div>
+                )}
               </div>
 
               {/* SECTION 3: TANGGAL PENGESAHAN MID SEMESTER */}

@@ -12,7 +12,8 @@ import {
   ArrowUpDown,
   FileText,
   CheckCircle2,
-  Info
+  Info,
+  UserCheck
 } from 'lucide-react';
 
 interface ModalCetakMassalRaporProps {
@@ -32,7 +33,10 @@ export const ModalCetakMassalRapor: React.FC<ModalCetakMassalRaporProps> = ({
 
   const [selectedIds, setSelectedIds] = useState<string[]>(students.map(s => s.id));
   const [sortBy, setSortBy] = useState<'absen' | 'nama' | 'nisn'>('absen');
-  const [settings, setSettings] = useState<PrintSettings>(defaultSettings);
+  const [settings, setSettings] = useState<PrintSettings>({
+    ...defaultSettings,
+    parentSignatureChoice: defaultSettings?.parentSignatureChoice || 'ayah'
+  });
 
   if (!isOpen) return null;
 
@@ -219,6 +223,56 @@ export const ModalCetakMassalRapor: React.FC<ModalCetakMassalRaporProps> = ({
                 </span>
               </label>
             </div>
+
+            {/* Pilihan Nama Orang Tua pada Tanda Tangan Cetak Massal */}
+            {settings.showSignature && (
+              <div className="pt-2.5 mt-2 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl">
+                <div>
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                    <UserCheck className="h-4 w-4 text-blue-600" />
+                    <span>Nama Orang Tua pada Kolom Tanda Tangan:</span>
+                  </span>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 block mt-0.5">
+                    Pilih nama yang otomatis dicetak pada lembar rapor seluruh siswa yang dipilih
+                  </span>
+                </div>
+                <div className="inline-flex rounded-xl p-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs shrink-0 shadow-2xs">
+                  <button
+                    type="button"
+                    onClick={() => setSettings({ ...settings, parentSignatureChoice: 'ayah' })}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      (settings.parentSignatureChoice || 'ayah') === 'ayah'
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                  >
+                    Nama Ayah
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSettings({ ...settings, parentSignatureChoice: 'ibu' })}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      settings.parentSignatureChoice === 'ibu'
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                  >
+                    Nama Ibu
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSettings({ ...settings, parentSignatureChoice: 'dots' })}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      settings.parentSignatureChoice === 'dots'
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                  >
+                    Titik-titik (Manual)
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Student Selection List */}
