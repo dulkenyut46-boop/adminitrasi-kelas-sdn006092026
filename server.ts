@@ -27,64 +27,57 @@ function getAIClient(): GoogleGenAI | null {
   return aiClient;
 }
 
-// Helper for resilient AI generation with fallback across models and retry on temporary high demand (503/429)
+// Helper for resilient AI generation with fallback across models and smooth recovery during temporary high demand (503/429)
 async function generateWithFallback(
   ai: GoogleGenAI,
   prompt: string,
   systemInstruction: string
 ): Promise<{ text: string; model: string; displayName: string }> {
-  // Candidate models from latest to lite
+  // Candidate models: primary 3.8 flash, high-throughput 3.1 flash lite, and flash alias
   const candidateModels = [
     { id: 'gemini-3.8-flash', name: 'Google Gemini 3.8 Flash' },
-    { id: 'gemini-flash-latest', name: 'Google Gemini Flash' },
-    { id: 'gemini-3.1-flash-lite', name: 'Google Gemini 3.1 Flash Lite' }
+    { id: 'gemini-3.1-flash-lite', name: 'Google Gemini 3.1 Flash Lite' },
+    { id: 'gemini-flash-latest', name: 'Google Gemini Flash' }
   ];
 
   let lastError: any = null;
 
   for (const candidate of candidateModels) {
-    for (let attempt = 0; attempt < 2; attempt++) {
-      try {
-        const response = await ai.models.generateContent({
+    try {
+      const response = await ai.models.generateContent({
+        model: candidate.id,
+        contents: prompt,
+        config: {
+          systemInstruction
+        }
+      });
+
+      const text = response.text || '';
+      if (text && text.trim().length > 0) {
+        return {
+          text,
           model: candidate.id,
-          contents: prompt,
-          config: {
-            systemInstruction
-          }
-        });
-
-        const text = response.text || '';
-        if (text && text.trim().length > 0) {
-          return {
-            text,
-            model: candidate.id,
-            displayName: candidate.name
-          };
-        }
-      } catch (err: any) {
-        lastError = err;
-        const errMsg = err?.message || String(err);
-        const isHighDemandOrRateLimit =
-          err?.status === 503 ||
-          err?.code === 503 ||
-          errMsg.includes('503') ||
-          errMsg.includes('high demand') ||
-          errMsg.includes('UNAVAILABLE') ||
-          errMsg.includes('429') ||
-          errMsg.includes('RESOURCE_EXHAUSTED');
-
-        console.warn(
-          `AI request attempt ${attempt + 1} with model ${candidate.id} failed: ${errMsg.slice(0, 150)}`
-        );
-
-        if (isHighDemandOrRateLimit && attempt === 0) {
-          // Brief pause before retry
-          await new Promise(resolve => setTimeout(resolve, 800));
-          continue;
-        }
-        // If second attempt failed or non-retriable, try next candidate model
-        break;
+          displayName: candidate.name
+        };
       }
+    } catch (err: any) {
+      lastError = err;
+      const errMsg = err?.message || String(err);
+      const isHighDemandOrRateLimit =
+        err?.status === 503 ||
+        err?.code === 503 ||
+        errMsg.includes('503') ||
+        errMsg.includes('high demand') ||
+        errMsg.includes('UNAVAILABLE') ||
+        errMsg.includes('429') ||
+        errMsg.includes('RESOURCE_EXHAUSTED');
+
+      // Use standard stdout logging to document fallback transitions cleanly
+      console.log(
+        `[AI Notice] Model ${candidate.id} ${isHighDemandOrRateLimit ? 'temporarily high demand' : 'unavailable'}, switching to next candidate...`
+      );
+      // Advance directly to the next candidate model
+      continue;
     }
   }
 
@@ -142,19 +135,23 @@ Pedoman Utama:
           timestamp: new Date().toISOString()
         });
       } else {
-        // Response if API Key is not configured
-        return res.status(503).json({
-          error: 'Layanan AI Server belum terhubung (API Key belum dikonfigurasi).',
+        // Response if API Key is not configured (graceful fallback without 503 HTTP failure)
+        return res.json({
+          result: null,
           source: 'server_offline',
-          fallbackAvailable: true
+          online: false,
+          fallbackAvailable: true,
+          message: 'Layanan AI Server belum terhubung (API Key belum dikonfigurasi).'
         });
       }
     } catch (error: any) {
-      console.warn('AI Generation service notice (activating fallback):', error?.message || error);
-      return res.status(503).json({
-        error: error.message || 'Model AI sedang mengalami lonjakan permintaan sementara',
-        source: 'server_unavailable',
-        fallbackAvailable: true
+      console.log('[AI Server] Falling back to standard Kurikulum Merdeka template generator:', error?.message || error);
+      return res.json({
+        result: null,
+        source: 'server_fallback',
+        online: false,
+        fallbackAvailable: true,
+        message: 'Model AI sedang mengalami lonjakan permintaan, dialihkan ke template terstandar.'
       });
     }
   });
@@ -189,7 +186,7 @@ Pedoman Utama:
         });
       }
     } catch (error: any) {
-      console.warn('AI Chat fallback triggered:', error?.message || error);
+      console.log('[AI Chat] Fallback triggered cleanly:', error?.message || error);
       return res.json({
         reply: `Halo Bapak/Ibu Guru! Terima kasih atas pertanyaannya. Sebagai panduan praktis pedagogik SD untuk materi/topik yang ditanyakan:\n\n1. **Kaitkan dengan Pengalaman Nyata Siswa**: Gunakan objek konkrit atau studi kasus di sekitar sekolah/lingkungan siswa.\n2. **Terapkan Pembelajaran Berdiferensiasi**: Sesuaikan gaya belajar (visual, auditori, kinestetik) dan kesiapan belajar masing-masing anak.\n3. **Gunakan Asesmen Formatif Berkelanjutan**: Lakukan observasi, umpan balik positif, serta bintang apresiasi untuk memotivasi peserta didik.`,
         source: 'template_fallback',

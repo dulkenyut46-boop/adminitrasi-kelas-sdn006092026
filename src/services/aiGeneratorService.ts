@@ -40,7 +40,7 @@ export async function checkAIServerStatus(): Promise<{ online: boolean; model?: 
       return await response.json();
     }
   } catch (err) {
-    console.warn('AI Server status check offline/failed:', err);
+    // Offline status check fallback
   }
   return { online: false, status: 'offline' };
 }
@@ -216,21 +216,18 @@ FORMAT KELUARAN:
           timestamp: data.timestamp || new Date().toISOString()
         };
       }
-    } else {
-      const errData = await response.json().catch(() => ({}));
-      console.warn('Backend online AI error response:', errData);
     }
   } catch (error) {
-    console.warn('Koneksi online ke backend AI gagal, mengaktifkan cadangan template lokal:', error);
+    // Graceful offline/local mode fallback without noisy console warning
   }
 
-  // Local rich fallback template engine tailored for Indonesian SD if server is unreachable
+  // Local rich fallback template engine tailored for Indonesian SD if server is unreachable or under high demand
   const fallbackResult = generateLocalSDFallback(params);
   return {
     result: fallbackResult,
     source: 'template_kurmer_sd',
     online: false,
-    model: 'Template Kurikulum Merdeka (Offline)'
+    model: 'Template Kurikulum Merdeka (Cadangan Otomatis)'
   };
 }
 
