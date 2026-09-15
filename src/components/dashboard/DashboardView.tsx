@@ -3,6 +3,7 @@ import { useApp } from '../../context/AppContext';
 import { StatCard } from '../common/StatCard';
 import { BadgeStatus } from '../common/BadgeStatus';
 import { ModalEditKelasFaseGuru } from './ModalEditKelasFaseGuru';
+import { ModalMenuSimpan } from './ModalMenuSimpan';
 import { KMPMAssessmentProgressSummary } from './KMPMAssessmentProgressSummary';
 import {
   Users,
@@ -20,7 +21,10 @@ import {
   UserCheck,
   Edit3,
   Layers,
-  ChevronRight
+  ChevronRight,
+  Save,
+  ShieldCheck,
+  HardDrive
 } from 'lucide-react';
 
 export const DashboardView: React.FC = () => {
@@ -38,11 +42,27 @@ export const DashboardView: React.FC = () => {
     events,
     cleaningDuties,
     currentUser,
-    setCurrentTab
+    setCurrentTab,
+    lastSavedAt,
+    saveAllData
   } = useApp();
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [modalInitialTab, setModalInitialTab] = useState<'kelas_fase' | 'wali_kelas' | 'daftar_guru'>('kelas_fase');
+  const [isMenuSimpanOpen, setIsMenuSimpanOpen] = useState(false);
+  const [isQuickSaving, setIsQuickSaving] = useState(false);
+  const [justSaved, setJustSaved] = useState(false);
+
+  const handleQuickSave = () => {
+    setIsQuickSaving(true);
+    setJustSaved(false);
+    setTimeout(() => {
+      saveAllData();
+      setIsQuickSaving(false);
+      setJustSaved(true);
+      setTimeout(() => setJustSaved(false), 3000);
+    }, 250);
+  };
 
   const todayStr = '2026-08-17'; // current simulated school day
   const safeAttendance = attendanceRecords || [];
@@ -145,6 +165,18 @@ export const DashboardView: React.FC = () => {
 
           {/* Quick Primary Actions in Banner */}
           <div className="flex flex-wrap md:flex-col gap-2 shrink-0">
+            {/* Primary SIMPAN Menu Button */}
+            <button
+              id="btn-menu-simpan-banner"
+              onClick={() => setIsMenuSimpanOpen(true)}
+              className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 px-4 py-2.5 text-xs font-black text-white shadow-md transition-all active:scale-95 cursor-pointer ring-2 ring-emerald-300/50"
+              title="Buka Menu SIMPAN & Kelola Cadangan Data"
+            >
+              <Save className="h-4 w-4" />
+              <span>MENU SIMPAN</span>
+              <span className="inline-block h-2 w-2 rounded-full bg-white animate-pulse" />
+            </button>
+
             <button
               onClick={() => setCurrentTab('presensi')}
               className="flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-xs font-bold text-blue-900 shadow-md hover:bg-blue-50 transition-all active:scale-95"
@@ -158,6 +190,85 @@ export const DashboardView: React.FC = () => {
             >
               <Sparkles className="h-4 w-4" />
               <span>Buka Asisten AI</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Menu SIMPAN & Status Keamanan Data Kelas */}
+      <div
+        id="panel-menu-simpan-dashboard"
+        className="rounded-2xl border border-emerald-200/90 dark:border-emerald-800/60 bg-gradient-to-r from-emerald-50/90 via-teal-50/50 to-blue-50/60 dark:from-emerald-950/30 dark:via-slate-900 dark:to-blue-950/20 p-4 sm:p-4.5 shadow-xs transition-all"
+      >
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="flex items-start sm:items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+              <Save className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-1.5">
+                  Menu SIMPAN & Keamanan Data Kelas
+                </h2>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Auto-Save Aktif
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
+                Data tersimpan otomatis di perangkat. Saat aplikasi ditutup dan dibuka kembali, seluruh data tetap aman &amp; sama dengan sebelumnya.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 shrink-0">
+            {/* Last Saved Badge */}
+            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-800/80 text-[11px] text-slate-600 dark:text-slate-300">
+              <Clock className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+              <span className="text-slate-400">Terakhir:</span>
+              <span className="font-semibold text-slate-800 dark:text-slate-200">
+                {lastSavedAt || 'Baru Saja'}
+              </span>
+            </div>
+
+            {/* Quick Save Button */}
+            <button
+              id="btn-quick-simpan-dashboard"
+              onClick={handleQuickSave}
+              disabled={isQuickSaving}
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold shadow-xs transition-all active:scale-95 cursor-pointer ${
+                justSaved
+                  ? 'bg-emerald-700 text-white ring-2 ring-emerald-400'
+                  : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+              }`}
+              title="Simpan seluruh data sekarang"
+            >
+              {justSaved ? (
+                <>
+                  <CheckCircle2 className="h-3.5 w-3.5 animate-bounce" />
+                  <span>Tersimpan!</span>
+                </>
+              ) : isQuickSaving ? (
+                <>
+                  <span className="h-3.5 w-3.5 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                  <span>Menyimpan...</span>
+                </>
+              ) : (
+                <>
+                  <Save className="h-3.5 w-3.5" />
+                  <span>Simpan Sekarang</span>
+                </>
+              )}
+            </button>
+
+            {/* Open Full SIMPAN Menu */}
+            <button
+              id="btn-buka-menu-simpan"
+              onClick={() => setIsMenuSimpanOpen(true)}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-emerald-700 dark:text-emerald-300 font-bold text-xs border border-emerald-300 dark:border-emerald-800 shadow-xs transition-all cursor-pointer"
+            >
+              <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
+              <span>Buka Menu SIMPAN</span>
             </button>
           </div>
         </div>
@@ -551,6 +662,12 @@ export const DashboardView: React.FC = () => {
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         initialTab={modalInitialTab}
+      />
+
+      {/* Modal Menu SIMPAN & Keamanan Data */}
+      <ModalMenuSimpan
+        isOpen={isMenuSimpanOpen}
+        onClose={() => setIsMenuSimpanOpen(false)}
       />
     </div>
   );

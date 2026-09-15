@@ -320,6 +320,11 @@ interface AppContextType {
   exportDatabaseToJson: () => void;
   importDatabaseFromJson: (jsonData: string) => boolean;
 
+  // Manual & Auto Persistence
+  lastSavedAt: string | null;
+  saveAllData: () => { success: boolean; timestamp: string };
+  isAutoSaveActive: boolean;
+
   // Quick Action Modal helpers
   selectedStudentForModal: Student | null;
   setSelectedStudentForModal: (student: Student | null) => void;
@@ -343,6 +348,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       }
       if (typeof fallback === 'object' && fallback !== null) {
         if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return fallback;
+        // For studentReports record dictionary, preserve saved dictionary directly
+        if (key === 'studentReports') {
+          return parsed as T;
+        }
         return { ...fallback, ...parsed };
       }
       return parsed as T;
@@ -497,6 +506,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [selectedStudentForModal, setSelectedStudentForModal] = useState<Student | null>(null);
 
+  // Track last saved timestamp for transparent data persistence status
+  const [lastSavedAt, setLastSavedAt] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem(STORAGE_PREFIX + 'lastSavedAt');
+    } catch {
+      return null;
+    }
+  });
+
   // Sync to LocalStorage
   useEffect(() => {
     localStorage.setItem(STORAGE_PREFIX + 'currentUser', JSON.stringify(currentUser));
@@ -618,6 +636,200 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const removeToast = (id: string) => {
     setToasts(prev => prev.filter(t => t.id !== id));
+  };
+
+  // Keep latest snapshot of all app data in ref for reliable unload flush
+  const latestDataRef = React.useRef({
+    currentUser,
+    availableUsers,
+    rolePermissions,
+    schoolInfo,
+    students,
+    teachers,
+    subjects,
+    tujuanPembelajaranList,
+    grades,
+    attendanceRecords,
+    journals,
+    modulAjarList,
+    schedule,
+    transactions,
+    weeklyDues,
+    inventory,
+    counseling,
+    cleaningDuties,
+    events,
+    extracurriculars,
+    studentReports,
+    projekKokurikulerList,
+    dplAssessmentList,
+    jurnalKokurikulerList,
+    artefakKokurikulerList
+  });
+
+  useEffect(() => {
+    latestDataRef.current = {
+      currentUser,
+      availableUsers,
+      rolePermissions,
+      schoolInfo,
+      students,
+      teachers,
+      subjects,
+      tujuanPembelajaranList,
+      grades,
+      attendanceRecords,
+      journals,
+      modulAjarList,
+      schedule,
+      transactions,
+      weeklyDues,
+      inventory,
+      counseling,
+      cleaningDuties,
+      events,
+      extracurriculars,
+      studentReports,
+      projekKokurikulerList,
+      dplAssessmentList,
+      jurnalKokurikulerList,
+      artefakKokurikulerList
+    };
+  }, [
+    currentUser,
+    availableUsers,
+    rolePermissions,
+    schoolInfo,
+    students,
+    teachers,
+    subjects,
+    tujuanPembelajaranList,
+    grades,
+    attendanceRecords,
+    journals,
+    modulAjarList,
+    schedule,
+    transactions,
+    weeklyDues,
+    inventory,
+    counseling,
+    cleaningDuties,
+    events,
+    extracurriculars,
+    studentReports,
+    projekKokurikulerList,
+    dplAssessmentList,
+    jurnalKokurikulerList,
+    artefakKokurikulerList
+  ]);
+
+  // Synchronous flush on tab close / window unload / page reload
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      try {
+        const d = latestDataRef.current;
+        localStorage.setItem(STORAGE_PREFIX + 'currentUser', JSON.stringify(d.currentUser));
+        localStorage.setItem(STORAGE_PREFIX + 'users', JSON.stringify(d.availableUsers));
+        localStorage.setItem(STORAGE_PREFIX + 'rolePermissions', JSON.stringify(d.rolePermissions));
+        localStorage.setItem(STORAGE_PREFIX + 'schoolInfo', JSON.stringify(d.schoolInfo));
+        localStorage.setItem(STORAGE_PREFIX + 'students', JSON.stringify(d.students));
+        localStorage.setItem(STORAGE_PREFIX + 'teachers', JSON.stringify(d.teachers));
+        localStorage.setItem(STORAGE_PREFIX + 'subjects', JSON.stringify(d.subjects));
+        localStorage.setItem(STORAGE_PREFIX + 'tujuanPembelajaran', JSON.stringify(d.tujuanPembelajaranList));
+        localStorage.setItem(STORAGE_PREFIX + 'grades', JSON.stringify(d.grades));
+        localStorage.setItem(STORAGE_PREFIX + 'attendance', JSON.stringify(d.attendanceRecords));
+        localStorage.setItem(STORAGE_PREFIX + 'journals', JSON.stringify(d.journals));
+        localStorage.setItem(STORAGE_PREFIX + 'modulAjar', JSON.stringify(d.modulAjarList));
+        localStorage.setItem(STORAGE_PREFIX + 'schedule', JSON.stringify(d.schedule));
+        localStorage.setItem(STORAGE_PREFIX + 'transactions', JSON.stringify(d.transactions));
+        localStorage.setItem(STORAGE_PREFIX + 'weeklyDues', JSON.stringify(d.weeklyDues));
+        localStorage.setItem(STORAGE_PREFIX + 'inventory', JSON.stringify(d.inventory));
+        localStorage.setItem(STORAGE_PREFIX + 'counseling', JSON.stringify(d.counseling));
+        localStorage.setItem(STORAGE_PREFIX + 'cleaningDuties', JSON.stringify(d.cleaningDuties));
+        localStorage.setItem(STORAGE_PREFIX + 'events', JSON.stringify(d.events));
+        localStorage.setItem(STORAGE_PREFIX + 'extracurriculars', JSON.stringify(d.extracurriculars));
+        localStorage.setItem(STORAGE_PREFIX + 'studentReports', JSON.stringify(d.studentReports));
+        localStorage.setItem(STORAGE_PREFIX + 'projekKokurikuler', JSON.stringify(d.projekKokurikulerList));
+        localStorage.setItem(STORAGE_PREFIX + 'dplAssessments', JSON.stringify(d.dplAssessmentList));
+        localStorage.setItem(STORAGE_PREFIX + 'jurnalKokurikuler', JSON.stringify(d.jurnalKokurikulerList));
+        localStorage.setItem(STORAGE_PREFIX + 'artefakKokurikuler', JSON.stringify(d.artefakKokurikulerList));
+      } catch (e) {
+        console.error('Error auto-flushing on unload:', e);
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('pagehide', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('pagehide', handleBeforeUnload);
+    };
+  }, []);
+
+  // Format timestamp helper for Indonesian locale
+  const getFormattedTimestamp = () => {
+    const now = new Date();
+    const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+    const monthNames = [
+      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+    const dayName = dayNames[now.getDay()];
+    const day = now.getDate();
+    const month = monthNames[now.getMonth()];
+    const year = now.getFullYear();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    return `${dayName}, ${day} ${month} ${year} • ${hours}:${minutes}:${seconds} WIB`;
+  };
+
+  // Manual & Guaranteed Save All Data Function
+  const saveAllData = (): { success: boolean; timestamp: string } => {
+    const formatted = getFormattedTimestamp();
+    try {
+      localStorage.setItem(STORAGE_PREFIX + 'currentUser', JSON.stringify(currentUser));
+      localStorage.setItem(STORAGE_PREFIX + 'users', JSON.stringify(availableUsers));
+      localStorage.setItem(STORAGE_PREFIX + 'rolePermissions', JSON.stringify(rolePermissions));
+      localStorage.setItem(STORAGE_PREFIX + 'schoolInfo', JSON.stringify(schoolInfo));
+      localStorage.setItem(STORAGE_PREFIX + 'students', JSON.stringify(students));
+      localStorage.setItem(STORAGE_PREFIX + 'teachers', JSON.stringify(teachers));
+      localStorage.setItem(STORAGE_PREFIX + 'subjects', JSON.stringify(subjects));
+      localStorage.setItem(STORAGE_PREFIX + 'tujuanPembelajaran', JSON.stringify(tujuanPembelajaranList));
+      localStorage.setItem(STORAGE_PREFIX + 'grades', JSON.stringify(grades));
+      localStorage.setItem(STORAGE_PREFIX + 'attendance', JSON.stringify(attendanceRecords));
+      localStorage.setItem(STORAGE_PREFIX + 'journals', JSON.stringify(journals));
+      localStorage.setItem(STORAGE_PREFIX + 'modulAjar', JSON.stringify(modulAjarList));
+      localStorage.setItem(STORAGE_PREFIX + 'schedule', JSON.stringify(schedule));
+      localStorage.setItem(STORAGE_PREFIX + 'transactions', JSON.stringify(transactions));
+      localStorage.setItem(STORAGE_PREFIX + 'weeklyDues', JSON.stringify(weeklyDues));
+      localStorage.setItem(STORAGE_PREFIX + 'inventory', JSON.stringify(inventory));
+      localStorage.setItem(STORAGE_PREFIX + 'counseling', JSON.stringify(counseling));
+      localStorage.setItem(STORAGE_PREFIX + 'cleaningDuties', JSON.stringify(cleaningDuties));
+      localStorage.setItem(STORAGE_PREFIX + 'events', JSON.stringify(events));
+      localStorage.setItem(STORAGE_PREFIX + 'extracurriculars', JSON.stringify(extracurriculars));
+      localStorage.setItem(STORAGE_PREFIX + 'studentReports', JSON.stringify(studentReports));
+      localStorage.setItem(STORAGE_PREFIX + 'projekKokurikuler', JSON.stringify(projekKokurikulerList));
+      localStorage.setItem(STORAGE_PREFIX + 'dplAssessments', JSON.stringify(dplAssessmentList));
+      localStorage.setItem(STORAGE_PREFIX + 'jurnalKokurikuler', JSON.stringify(jurnalKokurikulerList));
+      localStorage.setItem(STORAGE_PREFIX + 'artefakKokurikuler', JSON.stringify(artefakKokurikulerList));
+      localStorage.setItem(STORAGE_PREFIX + 'lastSavedAt', formatted);
+
+      setLastSavedAt(formatted);
+
+      addToast(
+        'success',
+        'Data Berhasil Disimpan',
+        'Seluruh data kelas telah disimpan permanen. Data tetap aman dan sama persis saat aplikasi ditutup & dibuka kembali.'
+      );
+
+      return { success: true, timestamp: formatted };
+    } catch (err) {
+      console.error('Save error:', err);
+      addToast('error', 'Gagal Menyimpan', 'Terjadi kendala saat menyimpan ke penyimpanan lokal browser.');
+      return { success: false, timestamp: formatted };
+    }
   };
 
   // Dark Mode
@@ -2233,7 +2445,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         if (data.counseling) setCounseling(data.counseling);
         if (data.cleaningDuties) setCleaningDuties(data.cleaningDuties);
         if (data.events) setEvents(data.events);
+        if (data.extracurriculars && Array.isArray(data.extracurriculars)) setExtracurriculars(data.extracurriculars);
         if (data.studentReports) setStudentReports(data.studentReports);
+        
+        // Ensure imported database is immediately written to permanent local storage
+        setTimeout(() => {
+          saveAllData();
+        }, 100);
+
         addToast('success', 'Restore Sukses', 'Data administrasi berhasil diimpor dari file JSON.');
         return true;
       }
@@ -2393,6 +2612,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         resetAllDataToDefault,
         exportDatabaseToJson,
         importDatabaseFromJson,
+        lastSavedAt,
+        saveAllData,
+        isAutoSaveActive: true,
         selectedStudentForModal,
         setSelectedStudentForModal
       }}

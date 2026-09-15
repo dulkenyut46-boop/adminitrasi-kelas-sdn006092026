@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import {
   Menu,
@@ -8,7 +8,9 @@ import {
   LogOut,
   Sparkles,
   PanelLeftClose,
-  PanelLeftOpen
+  PanelLeftOpen,
+  Save,
+  CheckCircle2
 } from 'lucide-react';
 
 interface TopbarProps {
@@ -29,8 +31,24 @@ export const Topbar: React.FC<TopbarProps> = ({
     isDarkMode,
     toggleDarkMode,
     schoolInfo,
-    logout
+    logout,
+    saveAllData,
+    lastSavedAt
   } = useApp();
+
+  const [isSaving, setIsSaving] = useState(false);
+  const [savedSuccess, setSavedSuccess] = useState(false);
+
+  const handleTopbarSave = () => {
+    setIsSaving(true);
+    setSavedSuccess(false);
+    setTimeout(() => {
+      saveAllData();
+      setIsSaving(false);
+      setSavedSuccess(true);
+      setTimeout(() => setSavedSuccess(false), 2500);
+    }, 200);
+  };
 
   const tabTitles: Record<string, { title: string; subtitle: string }> = {
     dashboard: { title: 'Dashboard Utama', subtitle: 'Ringkasan aktivitas dan administrasi kelas terpadu' },
@@ -95,6 +113,37 @@ export const Topbar: React.FC<TopbarProps> = ({
 
       {/* Right Action Controls */}
       <div className="flex items-center gap-2 sm:gap-3">
+        {/* Quick Save All Data Action */}
+        <button
+          id="btn-topbar-save"
+          onClick={handleTopbarSave}
+          disabled={isSaving}
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all shadow-xs cursor-pointer ${
+            savedSuccess
+              ? 'bg-emerald-600 border-emerald-500 text-white shadow-emerald-500/20'
+              : 'bg-emerald-50 hover:bg-emerald-100 border-emerald-300 text-emerald-800 dark:bg-emerald-950/50 dark:border-emerald-800 dark:text-emerald-300'
+          }`}
+          title={lastSavedAt ? `Terakhir disimpan: ${lastSavedAt}` : 'Simpan seluruh data ke penyimpanan lokal'}
+          aria-label="Simpan seluruh data kelas"
+        >
+          {savedSuccess ? (
+            <>
+              <CheckCircle2 className="h-3.5 w-3.5 text-white animate-bounce" />
+              <span className="hidden sm:inline">Tersimpan</span>
+            </>
+          ) : isSaving ? (
+            <>
+              <span className="h-3.5 w-3.5 rounded-full border-2 border-emerald-600 dark:border-emerald-400 border-t-transparent animate-spin" />
+              <span className="hidden sm:inline">Menyimpan...</span>
+            </>
+          ) : (
+            <>
+              <Save className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+              <span className="hidden sm:inline">Simpan</span>
+            </>
+          )}
+        </button>
+
         {/* Quick AI Assistant Shortcut Pill */}
         {currentTab !== 'ai_assistant' && (
           <button
